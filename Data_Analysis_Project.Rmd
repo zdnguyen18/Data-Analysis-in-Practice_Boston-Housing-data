@@ -1,0 +1,108 @@
+---
+title: "Data Analysis: Predict the age of a house built before 1940 based on the number of rooms and tax rate"
+output: html_notebook
+---
+```{r}
+
+```
+
+Using 2 libraries: tidyverse & ggplot2
+The Boston data is in the MASS package
+My project using variables: rm (number of rooms), age (how old the house is), tax, chas (location of housing nearby Charles river or not - variable to increse the accuracy of model)
+-> Create a new dataframe contains only 4 variables and check whether we have any NA cell in new df
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(MASS)
+Boston
+dim(Boston)
+df <- Boston[,c('chas','rm','age','tax')]
+df
+```
+Overview of the new dataframe:
++ str(): display a structure of an R object
++ summary(): display the min, max, median, mean of each variable
++ cor(): compute the correlation coefficienct 
+```{r}
+str(df)
+summary(df)
+head(df)
+```
+Correlation Test: cor()
+-> Meaning: 
++ The average number of rooms has a negative coefficient with age (dependent variable) 
++ While the tax rate has a positive coefficient with age (dependent variable) 
+```{r}
+pairs(df[,c(1:4)])
+cor(df)
+```
+
+Assign plot (histogram and boxplot) for each variable
+```{r}
+#Age variable
+ggplot(df,aes(x=age)) + geom_histogram(bins = 30, aes(y=..density..))+theme_classic() + geom_density()
+ggplot(df, aes(x=age)) + geom_boxplot() + theme_classic() 
+#rm variable
+ggplot(df,aes(x=rm)) + geom_histogram(bins = 30, aes(y=..density..))+theme_classic() + geom_density()
+ggplot(df, aes(x=rm)) + geom_boxplot() + theme_classic() 
+#tax variable
+ggplot(df,aes(x=tax)) + geom_histogram(bins = 30, aes(y=..density..))+theme_classic() + geom_density()
+ggplot(df, aes(x=tax)) + geom_boxplot() + theme_classic() 
+```
+Scatter diagram to show the relationship between dependent var (age) and each independent var (rm & tax)
+
+```{r}
+#age & rm
+ggplot(df, aes(rm,age)) + geom_point() + geom_smooth(formula = y~x, method = loess)
+#age & tax
+ggplot(df, aes(tax,age)) + geom_point() + geom_smooth(formula = y~x, method = loess)
+```
+3 linear regression models: 2 single linear regression models & one multi-variables regression model
++ Model 1: age and rm: Heteroscedasticity -> not a good linear regression model
++ Model 3: age, rm and tax
+```{r}
+(model1 <- lm(age~rm, data =df))
+summary(model1)
+par(mfrow = c(2,2))
+plot(model1)
+shapiro.test(model1$residuals)
+```
++ Model 2: age and tax
+```{r}
+(model2 <- lm(age~tax, data =df))
+summary(model2)
+par(mfrow = c(2,2))
+plot(model2)
+shapiro.test(model2$residuals)
+```
++ Model 3: age, rm and tax
+```{r}
+(model3 <- lm(age~tax+rm, data =df))
+summary(model3)
+par(mfrow = c(2,2))
+plot(model3)
+shapiro.test(model3$residuals)
+```
+Improve the accuracy of model using dummy variable CHAS
++ Create one data-frame with CHAS == 1: 35 rows x 4 cols
++ Model 3_1: multi-variables (age,tax,rm) linear regression with dataframe where chas==1
+```{r}
+(df2 <- filter(df, chas ==1))
+summary(df2)
+(model3_1 <- lm(age~ df2$tax + df2$rm, data =df2))
+summary(model3_1)
+```
+Improve the accuracy of model using dummy variable CHAS
++ Create one data-frame with CHAS == 0: 471 rows x 4 cols
++ Model 3_1: multi-variables (age,tax,rm) linear regression with dataframe where chas==1
+```{r}
+(df3 <- filter(df, chas ==0))
+summary(df3)
+(model3_2 <- lm(age~ df3$tax + df3$rm, data =df3))
+summary(model3_2)
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
